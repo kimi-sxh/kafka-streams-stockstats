@@ -32,22 +32,25 @@ import java.util.Properties;
  */
 public class StockStatsExample {
 
+    static {
+        System.setProperty("java.security.auth.login.config","D:\\multi_data\\kafka\\kafka_client_jaas.conf");
+    }
     public static void main(String[] args) throws Exception {
 
+        //1、生产与消费者的配置信息
         Properties props;
         if (args.length==1)
             props = LoadConfigs.loadConfig(args[0]);
         else
             props = LoadConfigs.loadConfig();
-
-        props.put(StreamsConfig.APPLICATION_ID_CONFIG, "stockstat-2");
+        props.put(StreamsConfig.APPLICATION_ID_CONFIG, "stockstat-2");//标识为消费者组
         props.put(StreamsConfig.DEFAULT_KEY_SERDE_CLASS_CONFIG, Serdes.String().getClass().getName());
         props.put(StreamsConfig.DEFAULT_VALUE_SERDE_CLASS_CONFIG, TradeSerde.class.getName());
-
         // setting offset reset to earliest so that we can re-run the demo code with the same pre-loaded data
         // Note: To re-run the demo, you need to use the offset reset tool:
         // https://cwiki.apache.org/confluence/display/KAFKA/Kafka+Streams+Application+Reset+Tool
         props.put(ConsumerConfig.AUTO_OFFSET_RESET_CONFIG, "earliest");
+
 
         // Time interval, in millisecond, for our aggregation window
         long windowSize = 5000;
@@ -67,12 +70,12 @@ public class StockStatsExample {
 
         KStream<String, Trade> source = builder.stream(Constants.STOCK_TOPIC);
 
-        KStream<Windowed<String>, TradeStats> stats = source
-                .groupByKey()
-                .windowedBy(TimeWindows.of(Duration.ofMillis(windowSize)).advanceBy(Duration.ofSeconds(1)))
-                .<TradeStats>aggregate(() -> new TradeStats(),(k, v, tradestats) -> tradestats.add(v),
-                        Materialized.<String, TradeStats, WindowStore<Bytes, byte[]>>as("trade-aggregates")
-                                .withValueSerde(new TradeStatsSerde()))
+        KStream<Windowed<String>, TradeStats> stats = source.groupByKey()
+                .windowedBy(TimeWindows.of(Duration.ofMillis(windowSize)).advanceBy(Duration.ofSeconds(1)))//定义一个时间窗口，窗口大小为5秒，滑动窗口为1秒
+                .<TradeStats>aggregate(
+                        () -> new TradeStats(),
+                        (k, v, tradestats) -> tradestats.add(v),
+                        Materialized.<String, TradeStats, WindowStore<Bytes, byte[]>>as("trade-aggregates").withValueSerde(new TradeStatsSerde()))//需要json来序列化和反序列化对象
                 .toStream()
                 .mapValues((trade) -> trade.computeAvgPrice());
 

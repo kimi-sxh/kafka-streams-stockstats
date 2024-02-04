@@ -1,12 +1,18 @@
 package com.shapira.examples.streams.stockstats.model;
 
 /**
- * Created by gwen on 1/22/17.
+ * Created by SUXH on 02/02/2024.
+ * 股票交易信息
  */
 public class Trade {
 
+    /** 交易类型 */
     String type;
+
+    /** 股票名称参见Constants.TICKERS */
     String ticker;
+
+    /** 交易价格 */
     double price;
     int size;
 

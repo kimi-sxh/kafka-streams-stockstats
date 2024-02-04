@@ -10,11 +10,17 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Properties;
 import java.util.Random;
-
-
+/**
+ * Created by SUXH on 02/02/2024.
+ * 模拟生成股票数据
+ */
 public class StockGenProducer {
 
     public static KafkaProducer<String, Trade> producer = null;
+
+    static {
+        System.setProperty("java.security.auth.login.config","D:\\multi_data\\kafka\\kafka_client_jaas.conf");
+    }
 
     public static void main(String[] args) throws Exception {
 
@@ -47,7 +53,6 @@ public class StockGenProducer {
 
 
         // initialize
-
         Random random = new Random();
         long iter = 0;
 
